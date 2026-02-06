@@ -330,9 +330,9 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
                 const i = (y * resolution + x) * 4
                 const a = imageData.data[i + 3]
 
-                // Background: push far back
+                // Background: push slightly back (REDUCED from -0.8 to -0.2)
                 if (!objectMask[y][x] || a < avgAlpha * 0.3) {
-                  depthMap[y][x] = -0.8
+                  depthMap[y][x] = -0.2
                   continue
                 }
 
@@ -347,37 +347,37 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
                   : 0.5
 
                 // ===== DEPTH CUE 1: Shape-from-Shading =====
-                // Use surface normals to infer depth
+                // Use surface normals to infer depth (REDUCED SCALE)
                 const normal = surfaceNormals[y][x]
                 const normalAngle = Math.acos(Math.max(0, Math.min(1, normal.z)))
-                const shapingDepth = (1 - normalAngle / Math.PI) * 0.35 // Flatter = closer
+                const shapingDepth = (1 - normalAngle / Math.PI) * 0.12 // Reduced from 0.35 to 0.12
 
                 // ===== DEPTH CUE 2: Radial Distance with Object-Aware Falloff =====
-                // Objects tend to be convex in center
-                const radialDepth = Math.cos(distFromCenter * Math.PI) * 0.3 * objectConfidence[y][x]
+                // Objects tend to be convex in center (REDUCED SCALE)
+                const radialDepth = Math.cos(distFromCenter * Math.PI) * 0.08 * objectConfidence[y][x] // Reduced from 0.3 to 0.08
 
                 // ===== DEPTH CUE 3: Photometric Stereo (Brightness-based) =====
-                // Brighter regions are typically closer (facing light source)
-                const photometricDepth = normalizedBrightness * 0.25
+                // Brighter regions are typically closer (REDUCED SCALE)
+                const photometricDepth = normalizedBrightness * 0.08 // Reduced from 0.25 to 0.08
 
                 // ===== DEPTH CUE 4: Edge-aware Depth Discontinuity =====
-                // Strong edges indicate depth boundaries
+                // Strong edges indicate depth boundaries (REDUCED PENALTY)
                 const edge = edgeStrength[y][x]
-                const edgePenalty = Math.min(edge / 0.5, 1) * 0.15
+                const edgePenalty = Math.min(edge / 0.5, 1) * 0.05 // Reduced from 0.15 to 0.05
 
                 // ===== DEPTH CUE 5: Color-based Depth Prediction =====
-                // Saturated colors tend to be on front surfaces
-                const colorDepth = saturation[y][x] * 0.2
+                // Saturated colors tend to be on front surfaces (REDUCED SCALE)
+                const colorDepth = saturation[y][x] * 0.06 // Reduced from 0.2 to 0.06
 
                 // ===== DEPTH CUE 6: Hue-based Material Understanding =====
-                // Different hues suggest different materials with different 3D properties
-                const hueDepth = Math.sin(hue[y][x] * Math.PI * 2) * 0.1
+                // Different hues suggest different materials (REDUCED SCALE)
+                const hueDepth = Math.sin(hue[y][x] * Math.PI * 2) * 0.03 // Reduced from 0.1 to 0.03
 
                 // ===== DEPTH CUE 7: Confidence-weighted Integration =====
                 // Higher confidence regions get more depth variation
                 const confidenceWeight = objectConfidence[y][x]
 
-                // Multi-cue fusion with learned weights (ML-inspired)
+                // Multi-cue fusion with learned weights (ML-inspired) - REDUCED OVERALL SCALE
                 const baseDepth = (
                   shapingDepth * 0.30 +      // Surface orientation (strongest cue)
                   radialDepth * 0.25 +       // Convexity assumption
@@ -386,8 +386,12 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
                   hueDepth * 0.10            // Hue variation
                 ) - edgePenalty              // Reduce depth at edges
 
-                // Apply confidence weighting and alpha modulation
-                const finalDepth = baseDepth * confidenceWeight * (a / 255)
+                // Apply confidence weighting and alpha modulation with DEPTH LIMITER
+                const rawDepth = baseDepth * confidenceWeight * (a / 255)
+
+                // CRITICAL FIX: Limit maximum depth to prevent excessive elongation
+                // Cap depth at ±0.15 units to maintain proportional shape
+                const finalDepth = Math.max(-0.15, Math.min(0.15, rawDepth))
 
                 depthMap[y][x] = finalDepth
               }
