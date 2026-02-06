@@ -97,6 +97,7 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
           ctx?.drawImage(texture.image, 0, 0, resolution, resolution)
 
           const depthMap: number[][] = []
+          let mainComponentSize = 0 // Declare in outer scope
 
           // Advanced AI-powered 3D reconstruction from image analysis
           console.log('[3D Viewer] Starting advanced 3D model prediction...')
