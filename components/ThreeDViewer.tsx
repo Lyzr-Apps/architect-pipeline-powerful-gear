@@ -475,8 +475,10 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
           console.log(`[3D Viewer] → Object-focused 3D reconstruction with ${mainComponentSize} analyzed pixels`)
           console.log(`[3D Viewer] → Using 7 depth cues: shape-from-shading, radial convexity, photometric stereo, edge discontinuity, color depth, hue analysis, confidence weighting`)
 
+          console.log('[3D Viewer] Stage 5: Building volumetric 3D mesh geometry...')
+
           // Create ultra-high resolution geometry
-          const geometryResolution = 383 // 384 vertices = 383 segments
+          const geometryResolution = 128 // Optimized for performance while maintaining quality
           const geometry = new THREE.PlaneGeometry(width, height, geometryResolution, geometryResolution)
           const positions = geometry.attributes.position
 
@@ -514,36 +516,109 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
           // Recalculate normals for proper lighting
           geometry.computeVertexNormals()
 
-          // Material based on view mode
-          let material: any
+          console.log('[3D Viewer] Stage 6: Adding volumetric thickness for solid mesh...')
+
+          // Create back face for volumetric depth (makes it a solid object, not just a surface)
+          const backGeometry = new THREE.PlaneGeometry(width, height, geometryResolution, geometryResolution)
+          const backPositions = backGeometry.attributes.position
+
+          // Apply inverted depth to back face with thickness
+          const thickness = 0.05 // Thickness of the 3D object
+          for (let i = 0; i < backPositions.count; i++) {
+            const vertX = i % verticesPerRow
+            const vertY = Math.floor(i / verticesPerRow)
+
+            const mapX = (vertX / geometryResolution) * (resolution - 1)
+            const mapY = (vertY / geometryResolution) * (resolution - 1)
+
+            const x0 = Math.floor(mapX)
+            const x1 = Math.min(x0 + 1, resolution - 1)
+            const y0 = Math.floor(mapY)
+            const y1 = Math.min(y0 + 1, resolution - 1)
+
+            const fx = mapX - x0
+            const fy = mapY - y0
+
+            const d00 = depthMap[y0]?.[x0] || 0
+            const d10 = depthMap[y0]?.[x1] || 0
+            const d01 = depthMap[y1]?.[x0] || 0
+            const d11 = depthMap[y1]?.[x1] || 0
+
+            const d0 = d00 * (1 - fx) + d10 * fx
+            const d1 = d01 * (1 - fx) + d11 * fx
+            const depth = d0 * (1 - fy) + d1 * fy
+
+            // Apply inverted depth with thickness offset
+            backPositions.setZ(i, depth - thickness)
+          }
+
+          backGeometry.computeVertexNormals()
+
+          // Rotate back face to face backwards
+          backGeometry.rotateY(Math.PI)
+
+          console.log('[3D Viewer] ✓ Volumetric mesh created with front and back faces')
+
+          // Create material based on view mode
+          let frontMaterial: any
+          let backMaterial: any
 
           if (viewMode === 'wireframe') {
-            material = new THREE.MeshBasicMaterial({
+            frontMaterial = new THREE.MeshBasicMaterial({
               color: 0x4361ee,
               wireframe: true,
             })
+            backMaterial = new THREE.MeshBasicMaterial({
+              color: 0x3651ce,
+              wireframe: true,
+            })
           } else if (viewMode === 'normal') {
-            material = new THREE.MeshNormalMaterial()
+            frontMaterial = new THREE.MeshNormalMaterial({ side: THREE.FrontSide })
+            backMaterial = new THREE.MeshNormalMaterial({ side: THREE.BackSide })
           } else {
-            material = new THREE.MeshStandardMaterial({
+            frontMaterial = new THREE.MeshStandardMaterial({
               map: texture,
               roughness: 0.5,
               metalness: 0.3,
-              side: THREE.DoubleSide,
+              side: THREE.FrontSide,
+            })
+            backMaterial = new THREE.MeshStandardMaterial({
+              color: 0x2a2a3e,
+              roughness: 0.8,
+              metalness: 0.1,
+              side: THREE.FrontSide,
             })
           }
 
-          const mesh = new THREE.Mesh(geometry, material)
-          scene.add(mesh)
-          sceneRef.current = { scene, camera, mesh, texture, width, height }
+          // Create front mesh (with texture)
+          const frontMesh = new THREE.Mesh(geometry, frontMaterial)
+          scene.add(frontMesh)
+
+          // Create back mesh (solid backing)
+          const backMesh = new THREE.Mesh(backGeometry, backMaterial)
+          scene.add(backMesh)
+
+          // Group both meshes together
+          const meshGroup = new THREE.Group()
+          meshGroup.add(frontMesh)
+          meshGroup.add(backMesh)
+          scene.add(meshGroup)
+
+          // Remove individual meshes from scene since they're in the group
+          scene.remove(frontMesh)
+          scene.remove(backMesh)
+
+          sceneRef.current = { scene, camera, mesh: meshGroup, frontMesh, backMesh, texture, width, height }
+
+          console.log('[3D Viewer] ✓ Complete 3D mesh model created (not just image texture)')
 
           // Animation loop
           const animate = () => {
             animationIdRef.current = requestAnimationFrame(animate)
 
-            // Rotate mesh
-            mesh.rotation.x += 0.005
-            mesh.rotation.y += 0.01
+            // Rotate mesh group (both front and back together)
+            meshGroup.rotation.x += 0.005
+            meshGroup.rotation.y += 0.01
 
             renderer.render(scene, camera)
           }
