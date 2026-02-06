@@ -356,6 +356,8 @@ export default function Home() {
             { assets: [uploadedAssetId] }
           )
 
+          let shouldContinueToDeployment = false
+
           if (refinementResult.success && refinementResult.response.status === 'success') {
             const refinementData = refinementResult.response as RefinementResult
             addLog(
@@ -364,13 +366,21 @@ export default function Home() {
               `Optimized: ${refinementData.result.original_poly_count.toLocaleString()} → ${refinementData.result.optimized_poly_count.toLocaleString()} polygons (-${refinementData.result.reduction_percentage.toFixed(1)}%)`,
               refinementData.result
             )
+            shouldContinueToDeployment = true
+          } else {
+            // Refinement failed, but we can still use the raw reconstruction mesh
+            addLog('Refinement', 'error', `${refinementResult.error || 'Refinement failed'} - Using raw reconstruction mesh`)
+            addLog('System', 'processing', 'Continuing with unoptimized mesh...')
+            shouldContinueToDeployment = true // Continue anyway
+          }
 
-            // Step 7: Asset Deployment
+          // Step 7: Asset Deployment (continue even if refinement failed)
+          if (shouldContinueToDeployment) {
             setCurrentStage('Asset Deployment')
             addLog('Deployment', 'processing', 'Packaging .glb and .obj files for download...')
 
             const deploymentResult = await callAIAgent(
-              `Package optimized mesh into .glb and .obj formats with all PBR textures`,
+              `Package mesh into .glb and .obj formats with all PBR textures`,
               AGENT_IDS.DEPLOYMENT,
               { assets: [uploadedAssetId] }
             )
@@ -382,15 +392,19 @@ export default function Home() {
               addLog(
                 'Deployment',
                 'completed',
-                `✓ Ready for download | GLB: ${deploymentData.result.glb_package.file_size_mb} MB | OBJ: ${deploymentData.result.obj_package.total_size_mb} MB`,
+                `Ready for download | GLB: ${deploymentData.result.glb_package.file_size_mb} MB | OBJ: ${deploymentData.result.obj_package.total_size_mb} MB`,
                 deploymentData.result
               )
               setCurrentStage('Completed')
             } else {
-              addLog('Deployment', 'error', deploymentResult.error || 'Deployment failed')
+              // If deployment fails, try to use the raw mesh URL from reconstruction
+              addLog('Deployment', 'error', `${deploymentResult.error || 'Deployment failed'} - Using raw mesh`)
+              if (reconstructionData.result.raw_mesh_url) {
+                setMeshUrl(reconstructionData.result.raw_mesh_url)
+                addLog('System', 'completed', 'Raw mesh available for preview')
+                setCurrentStage('Completed (Raw Mesh)')
+              }
             }
-          } else {
-            addLog('Refinement', 'error', refinementResult.error || 'Refinement failed')
           }
         } else {
           addLog('Reconstruction', 'error', reconstructionResult.error || 'Reconstruction failed')
@@ -626,7 +640,7 @@ export default function Home() {
           </div>
 
           <div className="flex-1 flex items-center justify-center p-8">
-            {!meshUrl ? (
+            {!meshUrl && !isProcessing ? (
               <div className="text-center">
                 <div className="h-32 w-32 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center mx-auto mb-4 border border-gray-800">
                   <Layers className="h-16 w-16 text-gray-700" />
@@ -636,18 +650,52 @@ export default function Home() {
                   Upload an image and click "Generate 3D Model" to begin the conversion process
                 </p>
               </div>
+            ) : !meshUrl && isProcessing ? (
+              <div className="text-center">
+                <div className="h-32 w-32 rounded-full bg-gradient-to-br from-[#4361ee]/20 to-[#3651ce]/20 flex items-center justify-center mx-auto mb-4 border border-[#4361ee]/30">
+                  <Loader2 className="h-16 w-16 text-[#4361ee] animate-spin" />
+                </div>
+                <h3 className="text-lg font-medium text-[#4361ee] mb-2">Processing Pipeline</h3>
+                <p className="text-sm text-gray-500 max-w-md">
+                  {currentStage || 'Generating your 3D model...'}
+                </p>
+                {reconstructionResult && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 mt-3">
+                    {reconstructionResult.result.polygon_count.toLocaleString()} polygons
+                  </Badge>
+                )}
+              </div>
             ) : (
-              <div className="w-full h-full rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900 to-[#0f0f17] flex items-center justify-center">
+              <div className="w-full h-full rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900 to-[#0f0f17] flex flex-col items-center justify-center p-6">
                 {/* Three.js canvas would go here - showing placeholder for now */}
                 <div className="text-center">
-                  <div className="h-64 w-64 rounded-lg bg-gradient-to-br from-[#4361ee]/20 to-[#3651ce]/20 flex items-center justify-center mx-auto mb-4 border border-[#4361ee]/30">
+                  <div className="h-64 w-64 rounded-lg bg-gradient-to-br from-[#4361ee]/20 to-[#3651ce]/20 flex items-center justify-center mx-auto mb-4 border border-[#4361ee]/30 relative overflow-hidden">
                     <Layers className="h-32 w-32 text-[#4361ee]" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f17] via-transparent to-transparent opacity-50"></div>
                   </div>
-                  <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                    Model Ready: {meshUrl.split('/').pop()}
+                  <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 mb-2">
+                    Model Ready
                   </Badge>
+                  {reconstructionResult && (
+                    <div className="flex gap-2 justify-center mb-2">
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
+                        {reconstructionResult.result.polygon_count.toLocaleString()} polys
+                      </Badge>
+                      <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-xs">
+                        {reconstructionResult.result.api_provider_used}
+                      </Badge>
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500 mt-2">3D viewer (Three.js integration pending)</p>
                   <p className="text-xs text-gray-600 mt-1">View Mode: {viewMode}</p>
+                  <a
+                    href={meshUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-[#4361ee] hover:text-[#3651ce] underline mt-2 inline-block"
+                  >
+                    Open mesh in new tab
+                  </a>
                 </div>
               </div>
             )}
