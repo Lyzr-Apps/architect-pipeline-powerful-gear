@@ -243,10 +243,20 @@ export default function Home() {
     try {
       // Step 1: Upload file
       addLog('Upload', 'processing', 'Uploading image to server...')
-      const uploadResult = await uploadFiles(uploadedFile)
+
+      // Add timeout wrapper for upload
+      const uploadWithTimeout = async () => {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Upload timeout after 30 seconds')), 30000)
+        )
+        const uploadPromise = uploadFiles(uploadedFile)
+        return Promise.race([uploadPromise, timeoutPromise])
+      }
+
+      const uploadResult = await uploadWithTimeout()
 
       if (!uploadResult.success || uploadResult.asset_ids.length === 0) {
-        addLog('Upload', 'error', uploadResult.error || 'Upload failed')
+        addLog('Upload', 'error', uploadResult.error || 'Upload failed - please check your API key configuration')
         setIsProcessing(false)
         return
       }

@@ -5,7 +5,10 @@ const LYZR_API_KEY = process.env.LYZR_API_KEY || ''
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Upload API] Starting file upload...')
+
     if (!LYZR_API_KEY) {
+      console.error('[Upload API] LYZR_API_KEY not configured')
       return NextResponse.json(
         {
           success: false,
@@ -16,7 +19,7 @@ export async function POST(request: NextRequest) {
           failed_uploads: 0,
           message: 'LYZR_API_KEY not configured',
           timestamp: new Date().toISOString(),
-          error: 'LYZR_API_KEY not configured on server',
+          error: 'LYZR_API_KEY not configured on server. Please add it to your .env.local file',
         },
         { status: 500 }
       )
@@ -24,6 +27,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const files = formData.getAll('files')
+    console.log(`[Upload API] Received ${files.length} file(s)`)
 
     if (files.length === 0) {
       return NextResponse.json(
@@ -46,10 +50,12 @@ export async function POST(request: NextRequest) {
     const uploadFormData = new FormData()
     for (const file of files) {
       if (file instanceof File) {
+        console.log(`[Upload API] Uploading file: ${file.name} (${file.size} bytes)`)
         uploadFormData.append('files', file, file.name)
       }
     }
 
+    console.log('[Upload API] Sending to Lyzr API...')
     const response = await fetch(LYZR_UPLOAD_URL, {
       method: 'POST',
       headers: {
@@ -58,8 +64,11 @@ export async function POST(request: NextRequest) {
       body: uploadFormData,
     })
 
+    console.log(`[Upload API] Lyzr API response status: ${response.status}`)
+
     if (response.ok) {
       const data = await response.json()
+      console.log('[Upload API] Success - data received:', data)
 
       const uploadedFiles = (data.results || []).map((r: any) => ({
         asset_id: r.asset_id || '',
@@ -71,6 +80,8 @@ export async function POST(request: NextRequest) {
       const assetIds = uploadedFiles
         .filter((f: any) => f.success && f.asset_id)
         .map((f: any) => f.asset_id)
+
+      console.log(`[Upload API] Extracted ${assetIds.length} asset ID(s):`, assetIds)
 
       return NextResponse.json({
         success: true,
@@ -84,7 +95,7 @@ export async function POST(request: NextRequest) {
       })
     } else {
       const errorText = await response.text()
-      console.error('Upload API error:', response.status, errorText)
+      console.error('[Upload API] Error response:', response.status, errorText)
 
       return NextResponse.json(
         {
