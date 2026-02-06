@@ -161,6 +161,9 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('textured')
   const [meshUrl, setMeshUrl] = useState<string>('')
 
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const logScrollRef = useRef<HTMLDivElement>(null)
 
@@ -210,12 +213,38 @@ export default function Home() {
   // Handle drag and drop
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
     const file = e.dataTransfer.files[0]
-    handleFileChange(file)
+    if (file) {
+      handleFileChange(file)
+    }
   }, [handleFileChange])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Only set isDragging to false if we're leaving the dropzone entirely
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX
+    const y = e.clientY
+
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setIsDragging(false)
+    }
   }, [])
 
   // Remove uploaded file
@@ -494,16 +523,28 @@ export default function Home() {
                   <div
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-[#4361ee] hover:bg-[#4361ee]/5 transition-colors"
+                    className={`
+                      relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200
+                      ${isDragging
+                        ? 'border-[#4361ee] bg-[#4361ee]/10 scale-[1.02]'
+                        : 'border-gray-700 hover:border-[#4361ee] hover:bg-[#4361ee]/5'
+                      }
+                    `}
                   >
-                    <Upload className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-sm text-gray-400 mb-1">Drag & drop or click to upload</p>
-                    <p className="text-xs text-gray-500">.jpg, .png, .webp (max 10MB)</p>
+                    <div className={`transition-all duration-200 ${isDragging ? 'scale-110' : 'scale-100'}`}>
+                      <Upload className={`h-12 w-12 mx-auto mb-3 transition-colors ${isDragging ? 'text-[#4361ee]' : 'text-gray-600'}`} />
+                      <p className={`text-sm mb-1 font-medium transition-colors ${isDragging ? 'text-[#4361ee]' : 'text-gray-400'}`}>
+                        {isDragging ? 'Drop your image here' : 'Drag & drop or click to upload'}
+                      </p>
+                      <p className="text-xs text-gray-500">.jpg, .png, .webp (max 10MB)</p>
+                    </div>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".jpg,.jpeg,.png,.webp"
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                       onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                       className="hidden"
                     />
