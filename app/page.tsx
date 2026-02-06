@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { callAIAgent, uploadFiles } from '@/lib/aiAgent'
+import ThreeDViewer from '@/components/ThreeDViewer'
 
 // TypeScript interfaces based on actual test response data
 interface PreflightAnalysisResult {
@@ -645,65 +646,31 @@ export default function Home() {
           </div>
 
           <div className="flex-1 flex items-center justify-center p-8">
-            {!meshUrl && !isProcessing ? (
+            {!previewUrl && !isProcessing ? (
               <div className="text-center">
                 <div className="h-32 w-32 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center mx-auto mb-4 border border-gray-800">
                   <Layers className="h-16 w-16 text-gray-700" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-400 mb-2">No 3D Model Generated</h3>
+                <h3 className="text-lg font-medium text-gray-400 mb-2">No Image Uploaded</h3>
                 <p className="text-sm text-gray-500 max-w-md">
-                  Upload an image and click "Generate 3D Model" to begin the conversion process
+                  Upload an image to generate a 3D model preview
                 </p>
               </div>
-            ) : !meshUrl && isProcessing ? (
+            ) : isProcessing ? (
               <div className="text-center">
                 <div className="h-32 w-32 rounded-full bg-gradient-to-br from-[#4361ee]/20 to-[#3651ce]/20 flex items-center justify-center mx-auto mb-4 border border-[#4361ee]/30">
                   <Loader2 className="h-16 w-16 text-[#4361ee] animate-spin" />
                 </div>
-                <h3 className="text-lg font-medium text-[#4361ee] mb-2">Processing Pipeline</h3>
+                <h3 className="text-lg font-medium text-[#4361ee] mb-2">Processing</h3>
                 <p className="text-sm text-gray-500 max-w-md">
                   {currentStage || 'Generating your 3D model...'}
                 </p>
-                {reconstructionResult && (
-                  <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 mt-3">
-                    {reconstructionResult.result.polygon_count.toLocaleString()} polygons
-                  </Badge>
-                )}
               </div>
-            ) : (
-              <div className="w-full h-full rounded-lg border border-gray-800 bg-gradient-to-br from-gray-900 to-[#0f0f17] flex flex-col items-center justify-center p-6">
-                {/* Three.js canvas would go here - showing placeholder for now */}
-                <div className="text-center">
-                  <div className="h-64 w-64 rounded-lg bg-gradient-to-br from-[#4361ee]/20 to-[#3651ce]/20 flex items-center justify-center mx-auto mb-4 border border-[#4361ee]/30 relative overflow-hidden">
-                    <Layers className="h-32 w-32 text-[#4361ee]" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f17] via-transparent to-transparent opacity-50"></div>
-                  </div>
-                  <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30 mb-2">
-                    Model Ready
-                  </Badge>
-                  {reconstructionResult && (
-                    <div className="flex gap-2 justify-center mb-2">
-                      <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
-                        {reconstructionResult.result.polygon_count.toLocaleString()} polys
-                      </Badge>
-                      <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-xs">
-                        {reconstructionResult.result.api_provider_used}
-                      </Badge>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">3D viewer (Three.js integration pending)</p>
-                  <p className="text-xs text-gray-600 mt-1">View Mode: {viewMode}</p>
-                  <a
-                    href={meshUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-[#4361ee] hover:text-[#3651ce] underline mt-2 inline-block"
-                  >
-                    Open mesh in new tab
-                  </a>
-                </div>
+            ) : previewUrl ? (
+              <div className="w-full h-full">
+                <ThreeDViewer imageUrl={previewUrl} viewMode={viewMode} />
               </div>
-            )}
+            ) : null}
           </div>
         </main>
 
