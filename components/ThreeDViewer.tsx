@@ -53,18 +53,68 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
       directionalLight.position.set(5, 5, 5)
       scene.add(directionalLight)
 
-      // Load texture
+      // Add rim light for better depth
+      const rimLight = new THREE.DirectionalLight(0x4361ee, 0.3)
+      rimLight.position.set(-5, 0, -5)
+      scene.add(rimLight)
+
+      // Load texture and analyze image
       const textureLoader = new THREE.TextureLoader()
       textureLoader.load(
         imageUrl,
         (texture) => {
-          // Create geometry based on image aspect ratio
+          // Get image dimensions and aspect ratio
           const aspectRatio = texture.image.width / texture.image.height
           const width = aspectRatio > 1 ? 2 : 2 * aspectRatio
           const height = aspectRatio > 1 ? 2 / aspectRatio : 2
 
-          // Create 3D extruded geometry
-          const geometry = new THREE.BoxGeometry(width, height, 0.3, 32, 32, 32)
+          // Create canvas to analyze image pixels
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          canvas.width = 64
+          canvas.height = 64
+          ctx?.drawImage(texture.image, 0, 0, 64, 64)
+          const imageData = ctx?.getImageData(0, 0, 64, 64)
+
+          // Generate depth map from image brightness
+          const depthMap: number[][] = []
+          if (imageData) {
+            for (let y = 0; y < 64; y++) {
+              depthMap[y] = []
+              for (let x = 0; x < 64; x++) {
+                const i = (y * 64 + x) * 4
+                const r = imageData.data[i]
+                const g = imageData.data[i + 1]
+                const b = imageData.data[i + 2]
+                const a = imageData.data[i + 3]
+
+                // Calculate brightness (grayscale)
+                const brightness = (r + g + b) / 3
+
+                // Use brightness for depth (brighter = closer)
+                // Alpha channel affects depth (transparent = recessed)
+                const depth = ((brightness / 255) * 0.5 + 0.1) * (a / 255)
+                depthMap[y][x] = depth
+              }
+            }
+          }
+
+          // Create geometry with displacement based on depth map
+          const geometry = new THREE.PlaneGeometry(width, height, 63, 63)
+          const positions = geometry.attributes.position
+
+          // Apply depth map to vertices
+          for (let i = 0; i < positions.count; i++) {
+            const x = Math.floor(i % 64)
+            const y = Math.floor(i / 64)
+
+            if (depthMap[y] && depthMap[y][x] !== undefined) {
+              positions.setZ(i, depthMap[y][x])
+            }
+          }
+
+          // Recalculate normals for proper lighting
+          geometry.computeVertexNormals()
 
           // Material based on view mode
           let material: any
@@ -81,12 +131,13 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
               map: texture,
               roughness: 0.5,
               metalness: 0.3,
+              side: THREE.DoubleSide,
             })
           }
 
           const mesh = new THREE.Mesh(geometry, material)
           scene.add(mesh)
-          sceneRef.current = { scene, camera, mesh }
+          sceneRef.current = { scene, camera, mesh, texture, width, height }
 
           // Animation loop
           const animate = () => {
@@ -103,8 +154,8 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
         undefined,
         (error) => {
           console.error('Error loading texture:', error)
-          // Fallback to colored cube
-          const geometry = new THREE.BoxGeometry(2, 2, 0.3)
+          // Fallback to simple plane
+          const geometry = new THREE.PlaneGeometry(2, 2, 32, 32)
           const material = new THREE.MeshStandardMaterial({ color: 0x4361ee })
           const mesh = new THREE.Mesh(geometry, material)
           scene.add(mesh)
@@ -154,7 +205,7 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
         script.parentNode.removeChild(script)
       }
     }
-  }, [imageUrl, viewMode])
+  }, [imageUrl])
 
   // Update material when view mode changes
   useEffect(() => {
@@ -162,7 +213,7 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
 
     // @ts-ignore
     const THREE = window.THREE
-    const { mesh } = sceneRef.current
+    const { mesh, texture } = sceneRef.current
 
     if (!mesh) return
 
@@ -178,17 +229,30 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
         wireframe: true,
       })
     } else if (viewMode === 'normal') {
-      mesh.material = new THREE.MeshNormalMaterial()
+      mesh.material = new THREE.MeshNormalMaterial({
+        side: THREE.DoubleSide,
+      })
     } else {
-      // Reload texture for textured mode
-      const textureLoader = new THREE.TextureLoader()
-      textureLoader.load(imageUrl, (texture) => {
+      // Use existing texture for textured mode
+      if (texture) {
         mesh.material = new THREE.MeshStandardMaterial({
           map: texture,
           roughness: 0.5,
           metalness: 0.3,
+          side: THREE.DoubleSide,
         })
-      })
+      } else {
+        // Reload texture if not available
+        const textureLoader = new THREE.TextureLoader()
+        textureLoader.load(imageUrl, (newTexture) => {
+          mesh.material = new THREE.MeshStandardMaterial({
+            map: newTexture,
+            roughness: 0.5,
+            metalness: 0.3,
+            side: THREE.DoubleSide,
+          })
+        })
+      }
     }
   }, [viewMode, imageUrl])
 
