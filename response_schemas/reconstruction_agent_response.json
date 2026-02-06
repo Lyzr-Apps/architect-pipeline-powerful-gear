@@ -1,0 +1,76 @@
+{
+  "agent_name": "Reconstruction Agent",
+  "agent_id": "698596a7e17e33c11eed1a9c",
+  "agent_purpose": "3D mesh generation orchestrator",
+  "description": "Manages Rodin Gen-2/Meshy API calls with parameters (model_type: standard, topology: quad, include_pbr: true). Handles polling until SUCCEEDED status, retrieves raw mesh and texture maps",
+  "response_schema": {
+    "status": "string",
+    "result": {
+      "reconstruction_status": "string",
+      "api_provider_used": "string",
+      "task_id": "string",
+      "raw_mesh_url": "string",
+      "texture_maps": {
+        "base_color_url": "string",
+        "normal_url": "string",
+        "roughness_url": "string",
+        "metallic_url": "string"
+      },
+      "polygon_count": "number",
+      "processing_time_seconds": "number",
+      "errors": "string"
+    },
+    "metadata": {
+      "agent_name": "string",
+      "timestamp": "string"
+    }
+  },
+  "example_response": {
+    "status": "success",
+    "result": {
+      "reconstruction_status": "SUCCEEDED",
+      "api_provider_used": "rodin",
+      "task_id": "12345-rodin-task",
+      "raw_mesh_url": "https://api.rodin.com/meshes/12345-rodin-task/raw_mesh.obj",
+      "texture_maps": {
+        "base_color_url": "https://api.rodin.com/meshes/12345-rodin-task/base_color.png",
+        "normal_url": "https://api.rodin.com/meshes/12345-rodin-task/normal_map.png",
+        "roughness_url": "https://api.rodin.com/meshes/12345-rodin-task/roughness_map.png",
+        "metallic_url": "https://api.rodin.com/meshes/12345-rodin-task/metallic_map.png"
+      },
+      "polygon_count": 45234,
+      "processing_time_seconds": 240,
+      "errors": ""
+    },
+    "metadata": {
+      "agent_name": "Reconstruction Agent",
+      "timestamp": "2023-10-20T15:00:00Z"
+    }
+  },
+  "is_actual_tested": true,
+  "test_timestamp": "2026-02-06T07:25:18.398955",
+  "test_message_used": "Hello, provide a sample response",
+  "actual_test_response": {
+    "status": "success",
+    "result": {
+      "reconstruction_status": "SUCCEEDED",
+      "api_provider_used": "rodin",
+      "task_id": "12345-rodin-task",
+      "raw_mesh_url": "https://api.rodin.com/meshes/12345-rodin-task/raw_mesh.obj",
+      "texture_maps": {
+        "base_color_url": "https://api.rodin.com/meshes/12345-rodin-task/base_color.png",
+        "normal_url": "https://api.rodin.com/meshes/12345-rodin-task/normal_map.png",
+        "roughness_url": "https://api.rodin.com/meshes/12345-rodin-task/roughness_map.png",
+        "metallic_url": "https://api.rodin.com/meshes/12345-rodin-task/metallic_map.png"
+      },
+      "polygon_count": 45234,
+      "processing_time_seconds": 240,
+      "errors": ""
+    },
+    "metadata": {
+      "agent_name": "Reconstruction Agent",
+      "timestamp": "2023-10-20T15:00:00Z"
+    }
+  },
+  "test_passed": true
+}

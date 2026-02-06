@@ -1,0 +1,89 @@
+{
+  "agent_name": "Deployment Agent",
+  "agent_id": "698596cc07ec48e3dc90a260",
+  "agent_purpose": "Asset packaging and deployment specialist",
+  "description": "Compresses assets to .glb format, generates .obj variant, updates manifest.json for React Three Fiber viewer, creates download links",
+  "response_schema": {
+    "status": "string",
+    "result": {
+      "glb_package": {
+        "url": "string",
+        "file_size_mb": "number",
+        "embedded_textures": "boolean"
+      },
+      "obj_package": {
+        "obj_url": "string",
+        "mtl_url": "string",
+        "texture_urls": [
+          "string"
+        ],
+        "total_size_mb": "number"
+      },
+      "manifest_url": "string",
+      "download_expires_at": "string",
+      "deployment_status": "string"
+    },
+    "metadata": {
+      "agent_name": "string",
+      "timestamp": "string"
+    }
+  },
+  "example_response": {
+    "status": "success",
+    "result": {
+      "glb_package": {
+        "url": "https://fileserver.com/download/sneaker_mesh.glb",
+        "file_size_mb": 15.3,
+        "embedded_textures": true
+      },
+      "obj_package": {
+        "obj_url": "https://fileserver.com/download/sneaker_mesh.obj",
+        "mtl_url": "https://fileserver.com/download/sneaker_mesh.mtl",
+        "texture_urls": [
+          "https://fileserver.com/download/diffuse_texture.png",
+          "https://fileserver.com/download/normal_texture.png",
+          "https://fileserver.com/download/roughness_texture.png"
+        ],
+        "total_size_mb": 20.7
+      },
+      "manifest_url": "https://fileserver.com/download/manifest.json",
+      "download_expires_at": "2023-11-25T15:00:00Z",
+      "deployment_status": "completed"
+    },
+    "metadata": {
+      "agent_name": "Deployment Agent",
+      "timestamp": "2023-11-24T15:00:00Z"
+    }
+  },
+  "is_actual_tested": true,
+  "test_timestamp": "2026-02-06T07:25:40.640049",
+  "test_message_used": "Hello, provide a sample response",
+  "actual_test_response": {
+    "status": "success",
+    "result": {
+      "glb_package": {
+        "url": "https://fileserver.com/download/sneaker_mesh.glb",
+        "file_size_mb": 15.3,
+        "embedded_textures": true
+      },
+      "obj_package": {
+        "obj_url": "https://fileserver.com/download/sneaker_mesh.obj",
+        "mtl_url": "https://fileserver.com/download/sneaker_mesh.mtl",
+        "texture_urls": [
+          "https://fileserver.com/download/diffuse_texture.png",
+          "https://fileserver.com/download/normal_texture.png",
+          "https://fileserver.com/download/roughness_texture.png"
+        ],
+        "total_size_mb": 20.7
+      },
+      "manifest_url": "https://fileserver.com/download/manifest.json",
+      "download_expires_at": "2023-11-25T15:00:00Z",
+      "deployment_status": "completed"
+    },
+    "metadata": {
+      "agent_name": "Deployment Agent",
+      "timestamp": "2023-11-24T15:00:00Z"
+    }
+  },
+  "test_passed": true
+}

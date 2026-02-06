@@ -1,0 +1,15 @@
+{
+  "agent_name": "Pipeline Orchestrator",
+  "agent_id": "698596e41caa4e686dd66f72",
+  "test_message": "Process this uploaded product image (sneaker.jpg) through the complete 3D pipeline",
+  "expected_purpose": "manager - coordinates the complete 3D conversion pipeline",
+  "timestamp": "2026-02-06T07:24:47.089829",
+  "is_valid_json": false,
+  "validation_errors": [
+    "Response is not valid JSON: Expecting value: line 1 column 1 (char 0)"
+  ],
+  "actual_response": {
+    "raw_text": "The Pre-flight Analysis has determined that the image 'sneaker.jpg' has a complex background that needs to be removed before it can be processed for 3D reconstruction. However, the Enhancement Agent has indicated that background removal is outside its scope.\n\nCould you please provide an image with the background already removed, or let me know if you'd like to proceed in a different way?"
+  },
+  "raw_response": "The Pre-flight Analysis has determined that the image 'sneaker.jpg' has a complex background that needs to be removed before it can be processed for 3D reconstruction. However, the Enhancement Agent has indicated that background removal is outside its scope.\n\nCould you please provide an image with the background already removed, or let me know if you'd like to proceed in a different way?"
+}

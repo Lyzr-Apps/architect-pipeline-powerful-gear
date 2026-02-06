@@ -1,0 +1,89 @@
+{
+  "agent_name": "Pipeline Orchestrator",
+  "agent_id": "698596e41caa4e686dd66f72",
+  "agent_purpose": "Manager agent that orchestrates autonomous 3D conversion workflow",
+  "description": "Coordinates the four-stage pipeline, maintains process log, handles error routing (sends blurry images to enhancement), aggregates final outputs for inspector display",
+  "response_schema": {
+    "status": "string",
+    "result": {
+      "pipeline_status": "string",
+      "current_stage": "string",
+      "process_log": [
+        {
+          "stage": "string",
+          "status": "string",
+          "timestamp": "string",
+          "message": "string"
+        }
+      ],
+      "final_outputs": {
+        "glb_url": "string",
+        "obj_url": "string",
+        "texture_maps": {
+          "base_color_url": "string",
+          "normal_url": "string",
+          "roughness_url": "string"
+        }
+      },
+      "errors": "null"
+    },
+    "metadata": {
+      "agent_name": "string",
+      "timestamp": "string"
+    }
+  },
+  "example_response": {
+    "status": "success",
+    "result": {
+      "pipeline_status": "completed",
+      "current_stage": "deployment",
+      "process_log": [
+        {
+          "stage": "pre-flight analysis",
+          "status": "completed",
+          "timestamp": "2023-10-24T10:00:00Z",
+          "message": "Image quality adequate, background removed."
+        },
+        {
+          "stage": "reconstruction",
+          "status": "completed",
+          "timestamp": "2023-10-24T11:00:00Z",
+          "message": "3D mesh generated successfully using Rodin/Meshy API."
+        },
+        {
+          "stage": "refinement",
+          "status": "completed",
+          "timestamp": "2023-10-24T11:30:00Z",
+          "message": "Mesh optimized and PBR textures extracted."
+        },
+        {
+          "stage": "deployment",
+          "status": "completed",
+          "timestamp": "2023-10-24T12:00:00Z",
+          "message": "Final assets packaged and ready for delivery."
+        }
+      ],
+      "final_outputs": {
+        "glb_url": "https://example.com/model.glb",
+        "obj_url": "https://example.com/model.obj",
+        "texture_maps": {
+          "base_color_url": "https://example.com/basecolor.png",
+          "normal_url": "https://example.com/normal.png",
+          "roughness_url": "https://example.com/roughness.png"
+        }
+      },
+      "errors": null
+    },
+    "metadata": {
+      "agent_name": "Pipeline Orchestrator",
+      "timestamp": "2023-10-24T12:00:00Z"
+    }
+  },
+  "is_actual_tested": true,
+  "test_timestamp": "2026-02-06T07:24:47.090540",
+  "test_message_used": "Hello, provide a sample response",
+  "actual_test_response": {
+    "raw_text": "The Pre-flight Analysis has determined that the image 'sneaker.jpg' has a complex background that needs to be removed before it can be processed for 3D reconstruction. However, the Enhancement Agent has indicated that background removal is outside its scope.\n\nCould you please provide an image with the background already removed, or let me know if you'd like to proceed in a different way?"
+  },
+  "test_passed": false
+}

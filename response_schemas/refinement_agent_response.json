@@ -1,0 +1,75 @@
+{
+  "agent_name": "Refinement Agent",
+  "agent_id": "698596baf7f7d3ffa5d86570",
+  "agent_purpose": "Mesh optimization and texture validation specialist",
+  "description": "Executes Smart Remesh to optimize polygon count (10k-30k target), extracts and validates PBR texture maps (Base Color, Normal, Roughness)",
+  "response_schema": {
+    "status": "string",
+    "result": {
+      "optimized": "boolean",
+      "original_poly_count": "number",
+      "optimized_poly_count": "number",
+      "reduction_percentage": "number",
+      "texture_validation": {
+        "base_color_valid": "boolean",
+        "normal_valid": "boolean",
+        "roughness_valid": "boolean"
+      },
+      "geometry_issues": [
+        "any"
+      ],
+      "optimized_mesh_url": "string",
+      "processing_time_ms": "number"
+    },
+    "metadata": {
+      "agent_name": "string",
+      "timestamp": "string"
+    }
+  },
+  "example_response": {
+    "status": "success",
+    "result": {
+      "optimized": true,
+      "original_poly_count": 85000,
+      "optimized_poly_count": 25000,
+      "reduction_percentage": 70.59,
+      "texture_validation": {
+        "base_color_valid": true,
+        "normal_valid": true,
+        "roughness_valid": true
+      },
+      "geometry_issues": [],
+      "optimized_mesh_url": "https://example.com/optimized_mesh.obj",
+      "processing_time_ms": 450
+    },
+    "metadata": {
+      "agent_name": "Refinement Agent",
+      "timestamp": "2023-10-05T14:30:00Z"
+    }
+  },
+  "is_actual_tested": true,
+  "test_timestamp": "2026-02-06T07:25:29.291118",
+  "test_message_used": "Hello, provide a sample response",
+  "actual_test_response": {
+    "status": "success",
+    "result": {
+      "optimized": true,
+      "original_poly_count": 85000,
+      "optimized_poly_count": 25000,
+      "reduction_percentage": 70.59,
+      "texture_validation": {
+        "base_color_valid": true,
+        "normal_valid": true,
+        "roughness_valid": true
+      },
+      "geometry_issues": [],
+      "optimized_mesh_url": "https://example.com/optimized_mesh.obj",
+      "processing_time_ms": 450
+    },
+    "metadata": {
+      "agent_name": "Refinement Agent",
+      "timestamp": "2023-10-05T14:30:00Z"
+    }
+  },
+  "test_passed": true
+}

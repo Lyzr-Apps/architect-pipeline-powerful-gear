@@ -1,0 +1,55 @@
+{
+  "agent_name": "Enhancement Agent",
+  "agent_id": "69859695382ef8715224cf63",
+  "agent_purpose": "Image quality enhancement specialist",
+  "description": "Upsamples blurry images using Super-Resolution before reconstruction. Only triggered when Pre-flight Agent detects insufficient quality",
+  "response_schema": {
+    "status": "string",
+    "result": {
+      "enhanced": "boolean",
+      "original_resolution": "string",
+      "enhanced_resolution": "string",
+      "quality_improvement_score": "number",
+      "enhanced_image_url": "string",
+      "processing_time_ms": "number"
+    },
+    "metadata": {
+      "agent_name": "string",
+      "timestamp": "string"
+    }
+  },
+  "example_response": {
+    "status": "success",
+    "result": {
+      "enhanced": true,
+      "original_resolution": "640x480",
+      "enhanced_resolution": "2048x2048",
+      "quality_improvement_score": 85,
+      "enhanced_image_url": "https://example.com/enhanced_image.jpeg",
+      "processing_time_ms": 250
+    },
+    "metadata": {
+      "agent_name": "Enhancement Agent",
+      "timestamp": "2023-10-25T14:32:05Z"
+    }
+  },
+  "is_actual_tested": true,
+  "test_timestamp": "2026-02-06T07:25:06.437410",
+  "test_message_used": "Hello, provide a sample response",
+  "actual_test_response": {
+    "status": "success",
+    "result": {
+      "enhanced": true,
+      "original_resolution": "640x480",
+      "enhanced_resolution": "2048x2048",
+      "quality_improvement_score": 85,
+      "enhanced_image_url": "https://example.com/enhanced_image.jpeg",
+      "processing_time_ms": 250
+    },
+    "metadata": {
+      "agent_name": "Enhancement Agent",
+      "timestamp": "2023-10-25T14:32:05Z"
+    }
+  },
+  "test_passed": true
+}

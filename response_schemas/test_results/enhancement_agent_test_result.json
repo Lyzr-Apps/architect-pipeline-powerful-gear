@@ -1,0 +1,25 @@
+{
+  "agent_name": "Enhancement Agent",
+  "agent_id": "69859695382ef8715224cf63",
+  "test_message": "Enhance this blurry image: current resolution 640x480, clarity score 45",
+  "expected_purpose": "assistant - enhances low-quality images",
+  "timestamp": "2026-02-06T07:25:06.436889",
+  "is_valid_json": true,
+  "validation_errors": [],
+  "actual_response": {
+    "status": "success",
+    "result": {
+      "enhanced": true,
+      "original_resolution": "640x480",
+      "enhanced_resolution": "2048x2048",
+      "quality_improvement_score": 85,
+      "enhanced_image_url": "https://example.com/enhanced_image.jpeg",
+      "processing_time_ms": 250
+    },
+    "metadata": {
+      "agent_name": "Enhancement Agent",
+      "timestamp": "2023-10-25T14:32:05Z"
+    }
+  },
+  "raw_response": "{\n  \"status\": \"success\",\n  \"result\": {\n    \"enhanced\": true,\n    \"original_resolution\": \"640x480\",\n    \"enhanced_resolution\": \"2048x2048\",\n    \"quality_improvement_score\": 85,\n    \"enhanced_image_url\": \"https://example.com/enhanced_image.jpeg\",\n    \"processing_time_ms\": 250\n  },\n  \"metadata\": {\"agent_name\": \"Enhancement Agent\", \"timestamp\": \"2023-10-25T14:32:05Z\"}\n}"
+}

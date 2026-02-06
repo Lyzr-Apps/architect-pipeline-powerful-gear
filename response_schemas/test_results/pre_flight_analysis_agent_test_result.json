@@ -1,0 +1,26 @@
+{
+  "agent_name": "Pre-flight Analysis Agent",
+  "agent_id": "69859686ab4bf65a66ad08ad",
+  "test_message": "Analyze this uploaded image: resolution 1920x1080, product photo with white background, clear focus",
+  "expected_purpose": "assistant - analyzes image quality and flags preprocessing needs",
+  "timestamp": "2026-02-06T07:24:57.872728",
+  "is_valid_json": true,
+  "validation_errors": [],
+  "actual_response": {
+    "status": "success",
+    "result": {
+      "quality_score": 90,
+      "background_type": "simple",
+      "object_category": "product",
+      "needs_enhancement": false,
+      "needs_background_removal": false,
+      "preprocessed_image_ready": true,
+      "recommendations": "The image is of high quality with a simple background and is ready for 3D reconstruction."
+    },
+    "metadata": {
+      "agent_name": "Pre-flight Analysis Agent",
+      "timestamp": "2023-11-02T10:00:00Z"
+    }
+  },
+  "raw_response": "{\n  \"status\": \"success\",\n  \"result\": {\n    \"quality_score\": 90,\n    \"background_type\": \"simple\",\n    \"object_category\": \"product\",\n    \"needs_enhancement\": false,\n    \"needs_background_removal\": false,\n    \"preprocessed_image_ready\": true,\n    \"recommendations\": \"The image is of high quality with a simple background and is ready for 3D reconstruction.\"\n  },\n  \"metadata\": {\n    \"agent_name\": \"Pre-flight Analysis Agent\",\n    \"timestamp\": \"2023-11-02T10:00:00Z\"\n  }\n}"
+}

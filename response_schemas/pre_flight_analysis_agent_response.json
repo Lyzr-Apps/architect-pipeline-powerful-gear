@@ -1,0 +1,58 @@
+{
+  "agent_name": "Pre-flight Analysis Agent",
+  "agent_id": "69859686ab4bf65a66ad08ad",
+  "agent_purpose": "Image quality analyzer and preprocessor",
+  "description": "Analyzes uploaded image for clarity, background complexity, and object type. Autonomously triggers background removal using rembg when complex backgrounds detected. Returns preprocessed image or flags for super-resolution",
+  "response_schema": {
+    "status": "string",
+    "result": {
+      "quality_score": "number",
+      "background_type": "string",
+      "object_category": "string",
+      "needs_enhancement": "boolean",
+      "needs_background_removal": "boolean",
+      "preprocessed_image_ready": "boolean",
+      "recommendations": "string"
+    },
+    "metadata": {
+      "agent_name": "string",
+      "timestamp": "string"
+    }
+  },
+  "example_response": {
+    "status": "success",
+    "result": {
+      "quality_score": 90,
+      "background_type": "simple",
+      "object_category": "product",
+      "needs_enhancement": false,
+      "needs_background_removal": false,
+      "preprocessed_image_ready": true,
+      "recommendations": "The image is of high quality with a simple background and is ready for 3D reconstruction."
+    },
+    "metadata": {
+      "agent_name": "Pre-flight Analysis Agent",
+      "timestamp": "2023-11-02T10:00:00Z"
+    }
+  },
+  "is_actual_tested": true,
+  "test_timestamp": "2026-02-06T07:24:57.873257",
+  "test_message_used": "Hello, provide a sample response",
+  "actual_test_response": {
+    "status": "success",
+    "result": {
+      "quality_score": 90,
+      "background_type": "simple",
+      "object_category": "product",
+      "needs_enhancement": false,
+      "needs_background_removal": false,
+      "preprocessed_image_ready": true,
+      "recommendations": "The image is of high quality with a simple background and is ready for 3D reconstruction."
+    },
+    "metadata": {
+      "agent_name": "Pre-flight Analysis Agent",
+      "timestamp": "2023-11-02T10:00:00Z"
+    }
+  },
+  "test_passed": true
+}

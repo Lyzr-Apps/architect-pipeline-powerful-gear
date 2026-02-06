@@ -1,0 +1,88 @@
+{
+  "nodes": [
+    {
+      "id": "input_node",
+      "type": "Input",
+      "label": "Image Upload Input",
+      "nodeCategory": "input"
+    },
+    {
+      "id": "pipeline_orchestrator",
+      "type": "Agent",
+      "label": "Pipeline Orchestrator",
+      "nodeCategory": "agent",
+      "agent_id": "698596e41caa4e686dd66f72"
+    },
+    {
+      "id": "preflight_agent",
+      "type": "Agent",
+      "label": "Pre-flight Analysis Agent",
+      "nodeCategory": "agent",
+      "agent_id": "69859686ab4bf65a66ad08ad"
+    },
+    {
+      "id": "enhancement_agent",
+      "type": "Agent",
+      "label": "Enhancement Agent",
+      "nodeCategory": "agent",
+      "agent_id": "69859695382ef8715224cf63"
+    },
+    {
+      "id": "reconstruction_agent",
+      "type": "Agent",
+      "label": "Reconstruction Agent",
+      "nodeCategory": "agent",
+      "agent_id": "698596a7e17e33c11eed1a9c"
+    },
+    {
+      "id": "refinement_agent",
+      "type": "Agent",
+      "label": "Refinement Agent",
+      "nodeCategory": "agent",
+      "agent_id": "698596baf7f7d3ffa5d86570"
+    },
+    {
+      "id": "deployment_agent",
+      "type": "Agent",
+      "label": "Deployment Agent",
+      "nodeCategory": "agent",
+      "agent_id": "698596cc07ec48e3dc90a260"
+    },
+    {
+      "id": "output_node",
+      "type": "Output",
+      "label": "Final 3D Assets Output",
+      "nodeCategory": "end"
+    }
+  ],
+  "edges": [
+    {
+      "source": "input_node",
+      "target": "pipeline_orchestrator"
+    },
+    {
+      "source": "pipeline_orchestrator",
+      "target": "preflight_agent"
+    },
+    {
+      "source": "preflight_agent",
+      "target": "enhancement_agent"
+    },
+    {
+      "source": "enhancement_agent",
+      "target": "reconstruction_agent"
+    },
+    {
+      "source": "reconstruction_agent",
+      "target": "refinement_agent"
+    },
+    {
+      "source": "refinement_agent",
+      "target": "deployment_agent"
+    },
+    {
+      "source": "deployment_agent",
+      "target": "output_node"
+    }
+  ]
+}
