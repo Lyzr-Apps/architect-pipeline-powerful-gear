@@ -12,6 +12,8 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
   const sceneRef = useRef<any>(null)
   const rendererRef = useRef<any>(null)
   const animationIdRef = useRef<number | null>(null)
+  const isDraggingRef = useRef<boolean>(false)
+  const previousMousePosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
   useEffect(() => {
     // Load TensorFlow.js and Three.js from CDN
@@ -612,13 +614,73 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
 
           console.log('[3D Viewer] ✓ Complete 3D mesh model created (not just image texture)')
 
+          // Mouse wheel zoom control
+          const handleWheel = (event: WheelEvent) => {
+            event.preventDefault()
+            const zoomSpeed = 0.001
+            camera.position.z += event.deltaY * zoomSpeed
+            // Clamp zoom between 1 (very close) and 10 (far away)
+            camera.position.z = Math.max(1, Math.min(10, camera.position.z))
+          }
+
+          // Mouse drag rotation control
+          const handleMouseDown = (event: MouseEvent) => {
+            isDraggingRef.current = true
+            previousMousePosition.current = { x: event.clientX, y: event.clientY }
+          }
+
+          const handleMouseMove = (event: MouseEvent) => {
+            if (!isDraggingRef.current) return
+
+            const deltaX = event.clientX - previousMousePosition.current.x
+            const deltaY = event.clientY - previousMousePosition.current.y
+
+            // Rotate mesh based on mouse movement
+            meshGroup.rotation.y += deltaX * 0.01
+            meshGroup.rotation.x += deltaY * 0.01
+
+            previousMousePosition.current = { x: event.clientX, y: event.clientY }
+          }
+
+          const handleMouseUp = () => {
+            isDraggingRef.current = false
+          }
+
+          // Add event listeners
+          renderer.domElement.addEventListener('wheel', handleWheel, { passive: false })
+          renderer.domElement.addEventListener('mousedown', handleMouseDown)
+          renderer.domElement.addEventListener('mousemove', handleMouseMove)
+          renderer.domElement.addEventListener('mouseup', handleMouseUp)
+          renderer.domElement.addEventListener('mouseleave', handleMouseUp)
+
+          // Store cleanup functions in scene ref
+          sceneRef.current = {
+            scene,
+            camera,
+            mesh: meshGroup,
+            frontMesh,
+            backMesh,
+            texture,
+            width,
+            height,
+            cleanup: () => {
+              renderer.domElement.removeEventListener('wheel', handleWheel)
+              renderer.domElement.removeEventListener('mousedown', handleMouseDown)
+              renderer.domElement.removeEventListener('mousemove', handleMouseMove)
+              renderer.domElement.removeEventListener('mouseup', handleMouseUp)
+              renderer.domElement.removeEventListener('mouseleave', handleMouseUp)
+            }
+          }
+
           // Animation loop
           const animate = () => {
             animationIdRef.current = requestAnimationFrame(animate)
 
-            // Rotate mesh group (both front and back together)
-            meshGroup.rotation.x += 0.005
-            meshGroup.rotation.y += 0.01
+            // Only auto-rotate if not manually dragging
+            if (!isDraggingRef.current) {
+              meshGroup.rotation.x += 0.005
+              meshGroup.rotation.y += 0.01
+            }
 
             renderer.render(scene, camera)
           }
@@ -632,12 +694,59 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
           const material = new THREE.MeshStandardMaterial({ color: 0x4361ee })
           const mesh = new THREE.Mesh(geometry, material)
           scene.add(mesh)
-          sceneRef.current = { scene, camera, mesh }
+
+          // Mouse wheel zoom control
+          const handleWheel = (event: WheelEvent) => {
+            event.preventDefault()
+            const zoomSpeed = 0.001
+            camera.position.z += event.deltaY * zoomSpeed
+            camera.position.z = Math.max(1, Math.min(10, camera.position.z))
+          }
+
+          // Mouse drag rotation control
+          const handleMouseDown = (event: MouseEvent) => {
+            isDraggingRef.current = true
+            previousMousePosition.current = { x: event.clientX, y: event.clientY }
+          }
+
+          const handleMouseMove = (event: MouseEvent) => {
+            if (!isDraggingRef.current) return
+            const deltaX = event.clientX - previousMousePosition.current.x
+            const deltaY = event.clientY - previousMousePosition.current.y
+            mesh.rotation.y += deltaX * 0.01
+            mesh.rotation.x += deltaY * 0.01
+            previousMousePosition.current = { x: event.clientX, y: event.clientY }
+          }
+
+          const handleMouseUp = () => {
+            isDraggingRef.current = false
+          }
+
+          renderer.domElement.addEventListener('wheel', handleWheel, { passive: false })
+          renderer.domElement.addEventListener('mousedown', handleMouseDown)
+          renderer.domElement.addEventListener('mousemove', handleMouseMove)
+          renderer.domElement.addEventListener('mouseup', handleMouseUp)
+          renderer.domElement.addEventListener('mouseleave', handleMouseUp)
+
+          sceneRef.current = {
+            scene,
+            camera,
+            mesh,
+            cleanup: () => {
+              renderer.domElement.removeEventListener('wheel', handleWheel)
+              renderer.domElement.removeEventListener('mousedown', handleMouseDown)
+              renderer.domElement.removeEventListener('mousemove', handleMouseMove)
+              renderer.domElement.removeEventListener('mouseup', handleMouseUp)
+              renderer.domElement.removeEventListener('mouseleave', handleMouseUp)
+            }
+          }
 
           const animate = () => {
             animationIdRef.current = requestAnimationFrame(animate)
-            mesh.rotation.x += 0.005
-            mesh.rotation.y += 0.01
+            if (!isDraggingRef.current) {
+              mesh.rotation.x += 0.005
+              mesh.rotation.y += 0.01
+            }
             renderer.render(scene, camera)
           }
           animate()
@@ -669,6 +778,9 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
       // Cleanup
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
+      }
+      if (sceneRef.current?.cleanup) {
+        sceneRef.current.cleanup()
       }
       if (rendererRef.current && containerRef.current) {
         containerRef.current.removeChild(rendererRef.current.domElement)
@@ -735,7 +847,7 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
   return (
     <div
       ref={containerRef}
-      className="w-full h-full rounded-lg overflow-hidden"
+      className="w-full h-full rounded-lg overflow-hidden cursor-grab active:cursor-grabbing"
       style={{ minHeight: '400px' }}
     />
   )
