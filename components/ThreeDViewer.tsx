@@ -68,48 +68,139 @@ export default function ThreeDViewer({ imageUrl, viewMode }: ThreeDViewerProps) 
           const width = aspectRatio > 1 ? 2 : 2 * aspectRatio
           const height = aspectRatio > 1 ? 2 / aspectRatio : 2
 
-          // Create canvas to analyze image pixels
+          // Create canvas to analyze image pixels with higher resolution
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d')
-          canvas.width = 64
-          canvas.height = 64
-          ctx?.drawImage(texture.image, 0, 0, 64, 64)
-          const imageData = ctx?.getImageData(0, 0, 64, 64)
+          const resolution = 128
+          canvas.width = resolution
+          canvas.height = resolution
+          ctx?.drawImage(texture.image, 0, 0, resolution, resolution)
+          const imageData = ctx?.getImageData(0, 0, resolution, resolution)
 
-          // Generate depth map from image brightness
+          // Advanced image analysis: edge detection + depth mapping
           const depthMap: number[][] = []
+          const edgeMap: number[][] = []
+          const objectMask: boolean[][] = []
+
           if (imageData) {
-            for (let y = 0; y < 64; y++) {
+            // Step 1: Calculate brightness map
+            const brightnessMap: number[][] = []
+            for (let y = 0; y < resolution; y++) {
+              brightnessMap[y] = []
+              for (let x = 0; x < resolution; x++) {
+                const i = (y * resolution + x) * 4
+                const r = imageData.data[i]
+                const g = imageData.data[i + 1]
+                const b = imageData.data[i + 2]
+                // Perceptual brightness formula (weighted for human eye)
+                brightnessMap[y][x] = 0.299 * r + 0.587 * g + 0.114 * b
+              }
+            }
+
+            // Step 2: Edge detection using Sobel operator to find object boundaries
+            for (let y = 0; y < resolution; y++) {
+              edgeMap[y] = []
+              for (let x = 0; x < resolution; x++) {
+                if (y === 0 || y === resolution - 1 || x === 0 || x === resolution - 1) {
+                  edgeMap[y][x] = 0
+                  continue
+                }
+
+                // Sobel kernels for edge detection
+                const gx =
+                  -brightnessMap[y-1][x-1] + brightnessMap[y-1][x+1] +
+                  -2*brightnessMap[y][x-1] + 2*brightnessMap[y][x+1] +
+                  -brightnessMap[y+1][x-1] + brightnessMap[y+1][x+1]
+
+                const gy =
+                  -brightnessMap[y-1][x-1] - 2*brightnessMap[y-1][x] - brightnessMap[y-1][x+1] +
+                  brightnessMap[y+1][x-1] + 2*brightnessMap[y+1][x] + brightnessMap[y+1][x+1]
+
+                edgeMap[y][x] = Math.sqrt(gx * gx + gy * gy)
+              }
+            }
+
+            // Step 3: Find object region using background detection
+            const avgBackgroundBrightness = (() => {
+              const borderPixels: number[] = []
+              // Sample border pixels to detect background
+              for (let x = 0; x < resolution; x++) {
+                borderPixels.push(brightnessMap[0][x])
+                borderPixels.push(brightnessMap[resolution-1][x])
+              }
+              for (let y = 1; y < resolution - 1; y++) {
+                borderPixels.push(brightnessMap[y][0])
+                borderPixels.push(brightnessMap[y][resolution-1])
+              }
+              return borderPixels.reduce((a, b) => a + b, 0) / borderPixels.length
+            })()
+
+            // Create object mask based on difference from background
+            for (let y = 0; y < resolution; y++) {
+              objectMask[y] = []
+              for (let x = 0; x < resolution; x++) {
+                const i = (y * resolution + x) * 4
+                const a = imageData.data[i + 3]
+                const brightnessDiff = Math.abs(brightnessMap[y][x] - avgBackgroundBrightness)
+                const edgeStrength = edgeMap[y][x] || 0
+
+                // Pixel is part of object if: not transparent, different from background, or on an edge
+                objectMask[y][x] = a > 50 && (brightnessDiff > 20 || edgeStrength > 30)
+              }
+            }
+
+            // Step 4: Generate sophisticated depth map
+            for (let y = 0; y < resolution; y++) {
               depthMap[y] = []
-              for (let x = 0; x < 64; x++) {
-                const i = (y * 64 + x) * 4
+              for (let x = 0; x < resolution; x++) {
+                const i = (y * resolution + x) * 4
                 const r = imageData.data[i]
                 const g = imageData.data[i + 1]
                 const b = imageData.data[i + 2]
                 const a = imageData.data[i + 3]
 
-                // Calculate brightness (grayscale)
-                const brightness = (r + g + b) / 3
+                const brightness = brightnessMap[y][x]
+                const edgeStrength = edgeMap[y][x] || 0
+                const isObject = objectMask[y][x]
 
-                // Use brightness for depth (brighter = closer)
-                // Alpha channel affects depth (transparent = recessed)
-                const depth = ((brightness / 255) * 0.5 + 0.1) * (a / 255)
-                depthMap[y][x] = depth
+                if (!isObject || a < 50) {
+                  // Background or transparent = recessed
+                  depthMap[y][x] = -0.3
+                } else {
+                  // Calculate distance from center for radial depth
+                  const centerX = resolution / 2
+                  const centerY = resolution / 2
+                  const distFromCenter = Math.sqrt(
+                    Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
+                  ) / (resolution / 2)
+
+                  // Combine brightness, edge info, and radial distance for depth
+                  // Center + brighter = closer, edges + darker = farther
+                  const brightnessDepth = (brightness / 255) * 0.6
+                  const edgeDepth = (edgeStrength / 255) * 0.4
+                  const radialDepth = (1 - distFromCenter * 0.3)
+
+                  depthMap[y][x] = (brightnessDepth + edgeDepth) * radialDepth * (a / 255)
+                }
               }
             }
           }
 
-          // Create geometry with displacement based on depth map
-          const geometry = new THREE.PlaneGeometry(width, height, 63, 63)
+          // Create geometry with higher resolution for better detail
+          const geometry = new THREE.PlaneGeometry(width, height, 127, 127)
           const positions = geometry.attributes.position
 
-          // Apply depth map to vertices
+          // Apply depth map to vertices with interpolation
           for (let i = 0; i < positions.count; i++) {
-            const x = Math.floor(i % 64)
-            const y = Math.floor(i / 64)
+            const vertX = Math.floor(i % 128)
+            const vertY = Math.floor(i / 128)
 
-            if (depthMap[y] && depthMap[y][x] !== undefined) {
-              positions.setZ(i, depthMap[y][x])
+            // Map vertex coordinates to depth map coordinates
+            const depthX = Math.floor((vertX / 127) * (resolution - 1))
+            const depthY = Math.floor((vertY / 127) * (resolution - 1))
+
+            if (depthMap[depthY] && depthMap[depthY][depthX] !== undefined) {
+              positions.setZ(i, depthMap[depthY][depthX])
             }
           }
 
