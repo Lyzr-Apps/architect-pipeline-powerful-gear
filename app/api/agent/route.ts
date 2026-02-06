@@ -102,6 +102,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { message, agent_id, user_id, session_id, assets } = body
 
+    console.log('[Agent API] Request:', { agent_id, message: message.substring(0, 100), has_assets: !!assets })
+
     if (!message || !agent_id) {
       return NextResponse.json(
         {
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!LYZR_API_KEY) {
+      console.error('[Agent API] LYZR_API_KEY not configured')
       return NextResponse.json(
         {
           success: false,
@@ -144,8 +147,10 @@ export async function POST(request: NextRequest) {
 
     if (assets && assets.length > 0) {
       payload.assets = assets
+      console.log('[Agent API] Including assets:', assets)
     }
 
+    console.log('[Agent API] Calling Lyzr API...')
     const response = await fetch(LYZR_API_URL, {
       method: 'POST',
       headers: {
@@ -155,12 +160,16 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(payload),
     })
 
+    console.log('[Agent API] Response status:', response.status)
     const rawText = await response.text()
+    console.log('[Agent API] Raw response (first 500 chars):', rawText.substring(0, 500))
 
     if (response.ok) {
       const parsed = parseLLMJson(rawText)
+      console.log('[Agent API] Parsed response:', JSON.stringify(parsed).substring(0, 300))
 
       if (parsed?.success === false && parsed?.error) {
+        console.error('[Agent API] Agent returned error:', parsed.error)
         return NextResponse.json({
           success: false,
           response: {
@@ -174,6 +183,7 @@ export async function POST(request: NextRequest) {
       }
 
       const normalized = normalizeResponse(parsed)
+      console.log('[Agent API] Normalized response status:', normalized.status)
 
       return NextResponse.json({
         success: true,
@@ -191,6 +201,9 @@ export async function POST(request: NextRequest) {
         errorMsg = errorData?.error || errorData?.message || errorMsg
       } catch {}
 
+      console.error('[Agent API] Error response:', errorMsg)
+      console.error('[Agent API] Raw error text:', rawText.substring(0, 500))
+
       return NextResponse.json(
         {
           success: false,
@@ -207,6 +220,8 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Server error'
+    console.error('[Agent API] Exception caught:', errorMsg)
+    console.error('[Agent API] Stack trace:', error instanceof Error ? error.stack : 'N/A')
     return NextResponse.json(
       {
         success: false,
@@ -216,6 +231,7 @@ export async function POST(request: NextRequest) {
           message: errorMsg,
         },
         error: errorMsg,
+        details: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 }
     )

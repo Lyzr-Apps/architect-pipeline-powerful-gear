@@ -336,6 +336,8 @@ export default function Home() {
           { assets: [uploadedAssetId] }
         )
 
+        console.log('[Pipeline] Reconstruction result:', reconstructionResult)
+
         if (reconstructionResult.success && reconstructionResult.response.status === 'success') {
           const reconstructionData = reconstructionResult.response as ReconstructionResult
           setReconstructionResult(reconstructionData)
@@ -407,7 +409,10 @@ export default function Home() {
             }
           }
         } else {
-          addLog('Reconstruction', 'error', reconstructionResult.error || 'Reconstruction failed')
+          const errorDetails = reconstructionResult.error || 'Reconstruction failed'
+          console.error('[Pipeline] Reconstruction failed:', errorDetails)
+          console.error('[Pipeline] Full reconstruction response:', JSON.stringify(reconstructionResult, null, 2))
+          addLog('Reconstruction', 'error', `${errorDetails}${reconstructionResult.details ? ' - Check browser console for details' : ''}`)
         }
       } else {
         addLog('Pre-flight Analysis', 'error', preflightResult.error || 'Analysis failed')
